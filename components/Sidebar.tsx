@@ -40,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, onLogout }) => {
         <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
           <Vote className="text-white" size={24} />
         </div>
-        <span className="font-bold text-lg tracking-tight">E-VOTE 2024</span>
+        <span className="font-bold text-lg tracking-tight uppercase">Bầu cử 2026</span>
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">

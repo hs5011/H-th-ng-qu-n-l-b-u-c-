@@ -56,7 +56,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-800 tracking-tight">CỔNG THÔNG TIN BẦU CỬ</h1>
-              <p className="text-slate-500 font-medium">Hệ thống quản lý cử tri & bỏ phiếu</p>
+              <p className="text-slate-500 font-medium uppercase text-xs tracking-wider">Hệ thống quản lý cử tri & bỏ phiếu</p>
             </div>
           </div>
 
@@ -114,8 +114,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
         
-        <p className="text-center text-slate-500 text-sm mt-8 font-medium">
-          &copy; 2024 Hội đồng Bầu cử Quốc gia. Bản quyền được bảo lưu.
+        <p className="text-center text-slate-500 text-[10px] mt-8 font-medium leading-relaxed px-4">
+          © 2026 Ủy Ban Bầu cử Đại biểu Quốc hội khóa XIV và Đại biểu Hội đồng nhân dân các cấp Xã Nhà bè. Bản quyền được bảo lưu.
         </p>
       </div>
     </div>

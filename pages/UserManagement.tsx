@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User, UserRole, VotingArea } from '../types';
-import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck, MapPin } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -9,6 +9,10 @@ const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     // Load users
@@ -38,6 +42,11 @@ const UserManagement: React.FC = () => {
       setVotingAreas(JSON.parse(savedAreas));
     }
   }, []);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -87,6 +96,13 @@ const UserManagement: React.FC = () => {
     u.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Paginated data
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -118,55 +134,99 @@ const UserManagement: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-4">Họ tên & Chức vụ</th>
-                <th className="px-6 py-4">Khu vực phân công</th>
-                <th className="px-6 py-4">Liên hệ</th>
-                <th className="px-6 py-4">Vai trò</th>
-                <th className="px-6 py-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-800">{user.fullName}</p>
-                    <p className="text-xs text-slate-400 font-medium">{user.position} | <span className="font-mono text-blue-600">{user.username}</span></p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {user.role === UserRole.ADMIN ? (
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Toàn quyền</span>
-                    ) : (
-                      <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-                        <MapPin size={14} className="text-red-500" />
-                        {user.votingArea || 'Chưa phân công'}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-xs text-slate-600 flex items-center gap-1"><Mail size={12}/> {user.email}</p>
-                    <p className="text-xs text-slate-400 flex items-center gap-1"><Phone size={12}/> {user.phone}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                      user.role === UserRole.ADMIN ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                    }`}>
-                      <Shield size={10} />
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(user.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {paginatedUsers.length > 0 ? (
+            <>
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4">Họ tên & Chức vụ</th>
+                    <th className="px-6 py-4">Khu vực phân công</th>
+                    <th className="px-6 py-4">Liên hệ</th>
+                    <th className="px-6 py-4">Vai trò</th>
+                    <th className="px-6 py-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-slate-800">{user.fullName}</p>
+                        <p className="text-xs text-slate-400 font-medium">{user.position} | <span className="font-mono text-blue-600">{user.username}</span></p>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.role === UserRole.ADMIN ? (
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Toàn quyền</span>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                            <MapPin size={14} className="text-red-500" />
+                            {user.votingArea || 'Chưa phân công'}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-xs text-slate-600 flex items-center gap-1"><Mail size={12}/> {user.email}</p>
+                        <p className="text-xs text-slate-400 flex items-center gap-1"><Phone size={12}/> {user.phone}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          user.role === UserRole.ADMIN ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        }`}>
+                          <Shield size={10} />
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1">
+                          <button onClick={() => { setEditingUser(user); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDelete(user.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Pagination UI */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Trang {currentPage} / {totalPages || 1}
+                </span>
+                <div className="flex gap-1">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="p-2 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none px-1">
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPage(idx + 1)}
+                        className={`min-w-[36px] h-9 rounded-lg font-bold text-xs transition-all ${
+                          currentPage === idx + 1 
+                            ? 'bg-red-600 text-white' 
+                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="p-2 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="p-12 text-center text-slate-400">Không tìm thấy cán bộ phù hợp.</div>
+          )}
         </div>
       </div>
 

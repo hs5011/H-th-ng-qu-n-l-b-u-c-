@@ -1,13 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Voter, User, UserRole } from '../types';
-import { Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin } from 'lucide-react';
+import { Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'voted' | 'not_voted'>('all');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const authData = localStorage.getItem('auth');
@@ -19,6 +23,11 @@ const VoterList: React.FC = () => {
       setVoters(JSON.parse(saved));
     }
   }, []);
+
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus]);
 
   const handleDeleteVoter = (id: string) => {
     if (confirm('Xóa cử tri này khỏi hệ thống?')) {
@@ -38,24 +47,19 @@ const VoterList: React.FC = () => {
 
   const isAdmin = currentUser?.role === UserRole.ADMIN;
 
-  // 1. Tập hợp cử tri gốc dựa theo vai trò (Staff chỉ thấy khu vực của mình)
   const roleBaseVoters = useMemo(() => {
     if (isAdmin) return voters;
     return voters.filter(v => v.votingArea === currentUser?.votingArea);
   }, [voters, isAdmin, currentUser]);
 
-  // 2. Tập hợp cử tri sau khi lọc tìm kiếm và trạng thái
   const filteredVoters = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    
     return roleBaseVoters.filter(v => {
-      // Lọc theo trạng thái
       const matchesFilter = filterStatus === 'all' || 
                            (filterStatus === 'voted' && v.hasVoted) || 
                            (filterStatus === 'not_voted' && !v.hasVoted);
       if (!matchesFilter) return false;
 
-      // Lọc theo tìm kiếm nhanh
       if (!term) return true;
       return (
         v.fullName.toLowerCase().includes(term) || 
@@ -66,6 +70,13 @@ const VoterList: React.FC = () => {
       );
     });
   }, [roleBaseVoters, searchTerm, filterStatus]);
+
+  // Paginated data
+  const totalPages = Math.ceil(filteredVoters.length / itemsPerPage);
+  const paginatedVoters = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredVoters.slice(start, start + itemsPerPage);
+  }, [filteredVoters, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -121,59 +132,99 @@ const VoterList: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          {filteredVoters.length > 0 ? (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4">Họ tên & CCCD</th>
-                  <th className="px-6 py-4">Khu phố & Địa điểm</th>
-                  <th className="px-6 py-4">Tổ / Đơn vị</th>
-                  <th className="px-6 py-4 text-center">Trạng thái</th>
-                  {isAdmin && <th className="px-6 py-4 text-right">Thao tác</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredVoters.map((v) => (
-                  <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-bold text-slate-800">{v.fullName}</p>
-                        <p className="text-xs font-mono text-slate-400 font-medium">{v.idCard}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <p className="text-slate-700 font-bold">{v.votingArea}</p>
-                        <p className="text-slate-400 text-xs font-medium">{v.neighborhood}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-xs text-slate-600 space-y-0.5">
-                        <p className="font-bold">Tổ: <span className="text-slate-400 font-medium">{v.votingGroup}</span></p>
-                        <p className="font-bold">Đơn vị: <span className="text-slate-400 font-medium">{v.constituency}</span></p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight ${
-                        v.hasVoted 
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                          : 'bg-slate-100 text-slate-500 border border-slate-200'
-                      }`}>
-                        {v.hasVoted ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                        {v.hasVoted ? 'Đã bầu' : 'Chưa bầu'}
-                      </span>
-                    </td>
-                    {isAdmin && (
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => handleDeleteVoter(v.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    )}
+          {paginatedVoters.length > 0 ? (
+            <>
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4">Họ tên & CCCD</th>
+                    <th className="px-6 py-4">Khu phố & Địa điểm</th>
+                    <th className="px-6 py-4">Tổ / Đơn vị</th>
+                    <th className="px-6 py-4 text-center">Trạng thái</th>
+                    {isAdmin && <th className="px-6 py-4 text-right">Thao tác</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedVoters.map((v) => (
+                    <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="font-bold text-slate-800">{v.fullName}</p>
+                          <p className="text-xs font-mono text-slate-400 font-medium">{v.idCard}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm">
+                          <p className="text-slate-700 font-bold">{v.votingArea}</p>
+                          <p className="text-slate-400 text-xs font-medium">{v.neighborhood}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-xs text-slate-600 space-y-0.5">
+                          <p className="font-bold">Tổ: <span className="text-slate-400 font-medium">{v.votingGroup}</span></p>
+                          <p className="font-bold">Đơn vị: <span className="text-slate-400 font-medium">{v.constituency}</span></p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tight ${
+                          v.hasVoted 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                            : 'bg-slate-100 text-slate-500 border border-slate-200'
+                        }`}>
+                          {v.hasVoted ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                          {v.hasVoted ? 'Đã bầu' : 'Chưa bầu'}
+                        </span>
+                      </td>
+                      {isAdmin && (
+                        <td className="px-6 py-4 text-right">
+                          <button onClick={() => handleDeleteVoter(v.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* Pagination UI */}
+              <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Trang {currentPage} / {totalPages || 1}
+                </span>
+                <div className="flex gap-1">
+                  <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="p-2 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none px-1">
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentPage(idx + 1)}
+                        className={`min-w-[36px] h-9 rounded-lg font-bold text-xs transition-all ${
+                          currentPage === idx + 1 
+                            ? 'bg-red-600 text-white' 
+                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="p-2 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </>
           ) : (
             <div className="p-24 text-center">
               <Search className="text-slate-200 mx-auto mb-4" size={48} />
