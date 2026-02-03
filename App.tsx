@@ -11,7 +11,7 @@ import ElectionSettings from './pages/ElectionSettings';
 import VotingAreaSettings from './pages/VotingAreaSettings';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
-import { AuthState, User } from './types';
+import { AuthState, User, UserRole } from './types';
 
 const App: React.FC = () => {
   const [auth, setAuth] = useState<AuthState>(() => {
@@ -36,6 +36,8 @@ const App: React.FC = () => {
     navigate('/login');
   };
 
+  const isAdmin = auth.user?.role === UserRole.ADMIN;
+
   if (!auth.isAuthenticated && location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
   }
@@ -53,12 +55,29 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/" element={<Dashboard />} />
-            <Route path="/users" element={<UserManagement />} />
+            
+            {/* Routes cho mọi người dùng đã đăng nhập */}
             <Route path="/voters" element={<VoterList />} />
-            <Route path="/voters/import" element={<VoterImport />} />
             <Route path="/voters/checkin" element={<VoterCheckin />} />
-            <Route path="/settings" element={<ElectionSettings />} />
-            <Route path="/areas" element={<VotingAreaSettings />} />
+            
+            {/* Admin Only Routes */}
+            <Route 
+              path="/voters/import" 
+              element={isAdmin ? <VoterImport /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/users" 
+              element={isAdmin ? <UserManagement /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/settings" 
+              element={isAdmin ? <ElectionSettings /> : <Navigate to="/" replace />} 
+            />
+            <Route 
+              path="/areas" 
+              element={isAdmin ? <VotingAreaSettings /> : <Navigate to="/" replace />} 
+            />
+            
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -26,8 +26,8 @@ const Sidebar: React.FC<SidebarProps> = ({ user, onLogout }) => {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/voters/checkin', label: 'Xác nhận cử tri', icon: CheckSquare },
     { path: '/voters', label: 'Danh sách cử tri', icon: List },
-    { path: '/voters/import', label: 'Nhập cử tri', icon: FileSpreadsheet },
     ...(user?.role === UserRole.ADMIN ? [
+      { path: '/voters/import', label: 'Nhập cử tri', icon: FileSpreadsheet },
       { path: '/areas', label: 'Quản lý khu vực', icon: Map },
       { path: '/users', label: 'Quản lý tài khoản', icon: Users },
       { path: '/settings', label: 'Cấu hình thời gian', icon: Settings }
