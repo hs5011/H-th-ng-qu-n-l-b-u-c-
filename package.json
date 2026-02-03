@@ -1,0 +1,27 @@
+
+{
+  "name": "he-thong-quan-ly-bau-cu-2026",
+  "version": "1.0.0",
+  "description": "Hệ thống quản lý cử tri và thống kê bầu cử Xã Nhà Bè 2026",
+  "main": "index.tsx",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "election",
+    "management",
+    "vietnam",
+    "react"
+  ],
+  "author": "Ủy Ban Bầu Cử Xã Nhà Bè",
+  "license": "MIT",
+  "dependencies": {
+    "lucide-react": "^0.563.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.7.0",
+    "xlsx": "0.18.5"
+  }
+}
