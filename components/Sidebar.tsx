@@ -8,7 +8,8 @@ import {
   CheckSquare, 
   LogOut,
   Vote,
-  List
+  List,
+  Settings
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -25,7 +26,10 @@ const Sidebar: React.FC<SidebarProps> = ({ user, onLogout }) => {
     { path: '/voters/checkin', label: 'Xác nhận cử tri', icon: CheckSquare },
     { path: '/voters', label: 'Danh sách cử tri', icon: List },
     { path: '/voters/import', label: 'Nhập cử tri', icon: FileSpreadsheet },
-    ...(user?.role === UserRole.ADMIN ? [{ path: '/users', label: 'Quản lý tài khoản', icon: Users }] : []),
+    ...(user?.role === UserRole.ADMIN ? [
+      { path: '/users', label: 'Quản lý tài khoản', icon: Users },
+      { path: '/settings', label: 'Cấu hình thời gian', icon: Settings }
+    ] : []),
   ];
 
   return (

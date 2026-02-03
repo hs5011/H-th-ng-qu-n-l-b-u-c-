@@ -4,10 +4,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts';
 import { Voter } from '../types';
-import { Users, UserCheck, Clock, TrendingUp } from 'lucide-react';
+import { Users, UserCheck, Clock, TrendingUp, Timer } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
+  const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
+  const [isFinished, setIsFinished] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('voters');
@@ -16,7 +18,6 @@ const Dashboard: React.FC = () => {
     if (saved && saved !== '[]') {
       setVoters(JSON.parse(saved));
     } else if (!isInitialized) {
-      // Chỉ nạp dữ liệu mẫu nếu chưa bao giờ khởi tạo ứng dụng
       const sampleVoters: Voter[] = Array.from({ length: 100 }, (_, i) => ({
         id: `v-${i}`,
         fullName: `Cử tri Mẫu ${i + 1}`,
@@ -34,13 +35,44 @@ const Dashboard: React.FC = () => {
     } else {
       setVoters([]);
     }
+
+    // Logic đếm ngược
+    const timer = setInterval(() => {
+      const savedEndTime = localStorage.getItem('election_end_time');
+      if (!savedEndTime) {
+        setTimeLeft('Chưa thiết lập');
+        return;
+      }
+
+      const end = new Date(savedEndTime).getTime();
+      const now = new Date().getTime();
+      const distance = end - now;
+
+      if (distance < 0) {
+        setTimeLeft('Đã kết thúc');
+        setIsFinished(true);
+        clearInterval(timer);
+      } else {
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        const h = hours < 10 ? `0${hours}` : hours;
+        const m = minutes < 10 ? `0${minutes}` : minutes;
+        const s = seconds < 10 ? `0${seconds}` : seconds;
+        
+        setTimeLeft(`${h}:${m}:${s}`);
+        setIsFinished(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const totalVoters = voters.length;
   const votedCount = voters.filter(v => v.hasVoted).length;
   const progress = totalVoters > 0 ? Math.round((votedCount / totalVoters) * 100) : 0;
 
-  // Thống kê theo Khu phố
   const neighborhoodData = Object.values(
     voters.reduce((acc, v) => {
       if (!acc[v.neighborhood]) acc[v.neighborhood] = { name: v.neighborhood, total: 0, voted: 0 };
@@ -53,7 +85,6 @@ const Dashboard: React.FC = () => {
     percentage: val.total > 0 ? Math.round((val.voted / val.total) * 100) : 0
   }));
 
-  // Thống kê theo Tổ (Top 10)
   const groupData = Object.values(
     voters.reduce((acc, v) => {
       if (!acc[v.votingGroup]) acc[v.votingGroup] = { name: v.votingGroup, total: 0, voted: 0 };
@@ -88,7 +119,14 @@ const Dashboard: React.FC = () => {
         <StatCard title="Tổng cử tri" value={totalVoters.toLocaleString()} icon={<Users size={24} />} color="text-blue-600" bgColor="bg-blue-50" />
         <StatCard title="Đã đi bầu" value={votedCount.toLocaleString()} icon={<UserCheck size={24} />} color="text-emerald-600" bgColor="bg-emerald-50" />
         <StatCard title="Tỷ lệ bỏ phiếu" value={`${progress}%`} icon={<TrendingUp size={24} />} color="text-red-600" bgColor="bg-red-50" />
-        <StatCard title="Trạng thái" value="Đang diễn ra" icon={<Clock size={24} />} color="text-amber-600" bgColor="bg-amber-50" />
+        <StatCard 
+          title="Thời gian còn lại" 
+          value={timeLeft} 
+          icon={<Clock size={24} />} 
+          color={isFinished ? "text-slate-400" : "text-amber-600"} 
+          bgColor={isFinished ? "bg-slate-50" : "bg-amber-50"} 
+          isTimer
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -151,13 +189,14 @@ const Dashboard: React.FC = () => {
   );
 };
 
-const StatCard = ({ title, value, icon, color, bgColor }: any) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+const StatCard = ({ title, value, icon, color, bgColor, isTimer }: any) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow relative overflow-hidden">
     <div className="flex justify-between items-start mb-4">
       <div className={`${bgColor} ${color} p-3 rounded-xl`}>{icon}</div>
+      {isTimer && <div className="animate-pulse w-2 h-2 bg-red-500 rounded-full"></div>}
     </div>
     <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">{title}</p>
-    <h4 className="text-3xl font-black text-slate-800 mt-1">{value}</h4>
+    <h4 className={`text-3xl font-black ${isTimer ? 'font-mono' : ''} text-slate-800 mt-1`}>{value}</h4>
   </div>
 );
 
