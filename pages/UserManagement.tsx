@@ -1,18 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserRole } from '../types';
-import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck } from 'lucide-react';
+import { User, UserRole, VotingArea } from '../types';
+import { Plus, Search, Edit2, Trash2, X, Shield, Mail, Phone, User as UserIcon, Lock, BadgeCheck, MapPin } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [votingAreas, setVotingAreas] = useState<VotingArea[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('users');
-    if (saved) {
-      setUsers(JSON.parse(saved));
+    // Load users
+    const savedUsers = localStorage.getItem('users');
+    if (savedUsers) {
+      setUsers(JSON.parse(savedUsers));
     } else {
       const defaultUsers: User[] = [
         {
@@ -29,6 +31,12 @@ const UserManagement: React.FC = () => {
       setUsers(defaultUsers);
       localStorage.setItem('users', JSON.stringify(defaultUsers));
     }
+
+    // Load areas
+    const savedAreas = localStorage.getItem('voting_areas');
+    if (savedAreas) {
+      setVotingAreas(JSON.parse(savedAreas));
+    }
   }, []);
 
   const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
@@ -44,6 +52,7 @@ const UserManagement: React.FC = () => {
       username: formData.get('username') as string,
       password: (formData.get('password') as string) || editingUser?.password || '123456',
       role: formData.get('role') as UserRole,
+      votingArea: formData.get('votingArea') as string || undefined
     };
 
     let updatedList;
@@ -113,8 +122,8 @@ const UserManagement: React.FC = () => {
             <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4">Họ tên & Chức vụ</th>
+                <th className="px-6 py-4">Khu vực phân công</th>
                 <th className="px-6 py-4">Liên hệ</th>
-                <th className="px-6 py-4">Đăng nhập</th>
                 <th className="px-6 py-4">Vai trò</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
@@ -124,14 +133,21 @@ const UserManagement: React.FC = () => {
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-800">{user.fullName}</p>
-                    <p className="text-xs text-slate-400 font-medium">{user.position}</p>
+                    <p className="text-xs text-slate-400 font-medium">{user.position} | <span className="font-mono text-blue-600">{user.username}</span></p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-slate-600 flex items-center gap-1"><Mail size={12}/> {user.email}</p>
+                    {user.role === UserRole.ADMIN ? (
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Toàn quyền</span>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                        <MapPin size={14} className="text-red-500" />
+                        {user.votingArea || 'Chưa phân công'}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-xs text-slate-600 flex items-center gap-1"><Mail size={12}/> {user.email}</p>
                     <p className="text-xs text-slate-400 flex items-center gap-1"><Phone size={12}/> {user.phone}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-blue-600">{user.username}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
@@ -160,7 +176,7 @@ const UserManagement: React.FC = () => {
             <div className="px-8 py-6 border-b flex justify-between items-center bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{editingUser ? 'Cập nhật tài khoản' : 'Thêm cán bộ mới'}</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Vui lòng điền đầy đủ thông tin bên dưới</p>
+                <p className="text-xs text-slate-400 font-bold uppercase mt-1">Phân công khu vực bỏ phiếu cụ thể</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24}/></button>
             </div>
@@ -191,11 +207,20 @@ const UserManagement: React.FC = () => {
                   <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2"><Lock size={12}/> Mật khẩu</label>
                   <input type="password" name="password" placeholder={editingUser ? 'Để trống nếu không đổi' : '••••••••'} className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl outline-none focus:border-red-500 transition-all font-medium" />
                 </div>
-                <div className="md:col-span-2 space-y-1.5">
+                <div className="space-y-1.5">
                   <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2"><Shield size={12}/> Vai trò hệ thống</label>
                   <select name="role" defaultValue={editingUser?.role || UserRole.STAFF} className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl bg-white outline-none focus:border-red-500 transition-all font-bold">
                     <option value={UserRole.STAFF}>Cán bộ (Staff)</option>
                     <option value={UserRole.ADMIN}>Quản trị viên (Admin)</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-500 uppercase flex items-center gap-2"><MapPin size={12}/> Khu vực bỏ phiếu</label>
+                  <select name="votingArea" defaultValue={editingUser?.votingArea || ''} className="w-full px-4 py-3 border-2 border-slate-100 rounded-xl bg-white outline-none focus:border-red-500 transition-all font-bold">
+                    <option value="">-- Không phân khu vực --</option>
+                    {votingAreas.map(area => (
+                      <option key={area.id} value={area.name}>{area.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

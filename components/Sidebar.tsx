@@ -9,7 +9,8 @@ import {
   LogOut,
   Vote,
   List,
-  Settings
+  Settings,
+  Map
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, onLogout }) => {
     { path: '/voters', label: 'Danh sách cử tri', icon: List },
     { path: '/voters/import', label: 'Nhập cử tri', icon: FileSpreadsheet },
     ...(user?.role === UserRole.ADMIN ? [
+      { path: '/areas', label: 'Quản lý khu vực', icon: Map },
       { path: '/users', label: 'Quản lý tài khoản', icon: Users },
       { path: '/settings', label: 'Cấu hình thời gian', icon: Settings }
     ] : []),

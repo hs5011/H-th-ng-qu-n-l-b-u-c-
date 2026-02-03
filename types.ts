@@ -13,6 +13,12 @@ export interface User {
   username: string;
   password?: string;
   role: UserRole;
+  votingArea?: string; // Khu vực bỏ phiếu được phân công
+}
+
+export interface VotingArea {
+  id: string;
+  name: string;
 }
 
 export interface Voter {

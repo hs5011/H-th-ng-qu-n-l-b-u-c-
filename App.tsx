@@ -8,6 +8,7 @@ import VoterImport from './pages/VoterImport';
 import VoterCheckin from './pages/VoterCheckin';
 import VoterList from './pages/VoterList';
 import ElectionSettings from './pages/ElectionSettings';
+import VotingAreaSettings from './pages/VotingAreaSettings';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import { AuthState, User } from './types';
@@ -57,6 +58,7 @@ const App: React.FC = () => {
             <Route path="/voters/import" element={<VoterImport />} />
             <Route path="/voters/checkin" element={<VoterCheckin />} />
             <Route path="/settings" element={<ElectionSettings />} />
+            <Route path="/areas" element={<VotingAreaSettings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

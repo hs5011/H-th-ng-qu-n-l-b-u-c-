@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Text
 } from 'recharts';
 import { Voter } from '../types';
 import { Users, UserCheck, Clock, TrendingUp, Timer } from 'lucide-react';
@@ -147,24 +147,48 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
           <h3 className="text-lg font-bold text-slate-800 mb-6 self-start">Tỷ lệ hoàn thành</h3>
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={8} dataKey="value">
+                <Pie 
+                  data={pieData} 
+                  cx="50%" 
+                  cy="50%" 
+                  innerRadius={60} 
+                  outerRadius={85} 
+                  paddingAngle={5} 
+                  dataKey="value"
+                  stroke="none"
+                >
                   {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            {/* Overlay Percentage in the middle */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-3xl font-black text-slate-800 leading-none">{progress}%</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Đã bầu</span>
+            </div>
           </div>
           <div className="w-full mt-4 space-y-3">
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-600"><div className="w-3 h-3 rounded-full bg-red-500"></div> Đã bầu</span>
-              <span className="font-bold text-slate-800">{votedCount}</span>
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div> Đã bầu
+              </span>
+              <div className="text-right">
+                <span className="font-bold text-slate-800 block">{votedCount}</span>
+                <span className="text-[10px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded ml-1 uppercase">{progress}%</span>
+              </div>
             </div>
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-              <span className="flex items-center gap-2 text-sm font-semibold text-slate-600"><div className="w-3 h-3 rounded-full bg-slate-200"></div> Chưa bầu</span>
-              <span className="font-bold text-slate-800">{totalVoters - votedCount}</span>
+              <span className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <div className="w-3 h-3 rounded-full bg-slate-200"></div> Chưa bầu
+              </span>
+              <div className="text-right">
+                <span className="font-bold text-slate-800 block">{totalVoters - votedCount}</span>
+                <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded ml-1 uppercase">{100 - progress}%</span>
+              </div>
             </div>
           </div>
         </div>

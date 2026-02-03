@@ -1,22 +1,54 @@
 
-import React, { useState } from 'react';
-import { Search, UserCheck, ShieldCheck, MapPin, Hash, CheckCircle, AlertTriangle } from 'lucide-react';
-import { Voter } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Search, UserCheck, ShieldCheck, MapPin, Hash, CheckCircle, AlertTriangle, Lock } from 'lucide-react';
+import { Voter, User, UserRole } from '../types';
 
 const VoterCheckin: React.FC = () => {
   const [searchId, setSearchId] = useState('');
   const [voter, setVoter] = useState<Voter | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{title: string, msg: string} | null>(null);
+
+  useEffect(() => {
+    const authData = localStorage.getItem('auth');
+    if (authData) {
+      setCurrentUser(JSON.parse(authData).user);
+    }
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchId.trim()) return;
 
     setHasSearched(true);
+    setErrorInfo(null);
+    setVoter(null);
+
     const voters: Voter[] = JSON.parse(localStorage.getItem('voters') || '[]');
     const found = voters.find(v => v.idCard === searchId);
-    setVoter(found || null);
+
+    if (!found) {
+      setErrorInfo({
+        title: "Không tìm thấy cử tri",
+        msg: `Số CCCD ${searchId} không tồn tại trong hệ thống bầu cử.`
+      });
+      return;
+    }
+
+    // Kiểm tra quyền hạn khu vực
+    if (currentUser?.role === UserRole.STAFF) {
+      if (currentUser.votingArea && found.votingArea !== currentUser.votingArea) {
+        setErrorInfo({
+          title: "Không thuộc phạm vi quản lý",
+          msg: `Cử tri này thuộc "${found.votingArea}". Bạn chỉ được phép xác nhận cử tri thuộc "${currentUser.votingArea}".`
+        });
+        return;
+      }
+    }
+
+    setVoter(found);
   };
 
   const handleMarkAsVoted = () => {
@@ -38,8 +70,16 @@ const VoterCheckin: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Xác nhận cử tri đi bầu</h1>
-        <p className="text-slate-500 text-lg">Tra cứu thông tin theo Số CCCD / CMND</p>
+        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight flex items-center justify-center gap-3">
+          <UserCheck size={32} className="text-red-600" />
+          Xác nhận cử tri đi bầu
+        </h1>
+        {currentUser?.role === UserRole.STAFF && (
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-50 text-red-600 rounded-full text-sm font-bold border border-red-100">
+            <MapPin size={16} />
+            Phạm vi quản lý: {currentUser.votingArea || 'Toàn bộ hệ thống'}
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSearch} className="relative group">
@@ -50,7 +90,7 @@ const VoterCheckin: React.FC = () => {
           type="text" 
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
-          placeholder="Nhập 12 số CCCD..." 
+          placeholder="Nhập 12 số CCCD cử tri..." 
           className="block w-full pl-16 pr-32 py-5 text-xl bg-white border-2 border-slate-200 rounded-2xl shadow-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 outline-none transition-all font-mono"
         />
         <button 
@@ -93,7 +133,7 @@ const VoterCheckin: React.FC = () => {
                 <div className="space-y-6">
                   <DetailItem label="Khu phố" value={voter.neighborhood} icon={<MapPin size={18} />} />
                   <DetailItem label="Tổ bầu cử" value={voter.votingGroup} />
-                  <DetailItem label="Khu vực bỏ phiếu" value={voter.votingArea} />
+                  <DetailItem label="Khu vực bỏ phiếu" value={voter.votingArea} icon={<MapPin size={18} />} highlight />
                 </div>
               </div>
 
@@ -119,19 +159,17 @@ const VoterCheckin: React.FC = () => {
                 )}
               </div>
             </div>
-          ) : (
+          ) : errorInfo && (
             <div className="bg-white p-12 rounded-3xl shadow-xl border-2 border-amber-100 flex flex-col items-center text-center space-y-4">
               <div className="w-20 h-20 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center">
-                <AlertTriangle size={48} />
+                {errorInfo.title.includes('phạm vi') ? <Lock size={48} /> : <AlertTriangle size={48} />}
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-slate-800">Không tìm thấy cử tri</h3>
-                <p className="text-slate-500 max-w-sm">
-                  Số CCCD <b>{searchId}</b> không tồn tại trong danh sách bầu cử của đơn vị này. Vui lòng kiểm tra lại.
-                </p>
+                <h3 className="text-2xl font-bold text-slate-800">{errorInfo.title}</h3>
+                <p className="text-slate-500 max-w-sm">{errorInfo.msg}</p>
               </div>
               <button 
-                onClick={() => { setHasSearched(false); setSearchId(''); }}
+                onClick={() => { setHasSearched(false); setSearchId(''); setErrorInfo(null); }}
                 className="mt-4 px-6 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors"
               >
                 Thử lại với số khác
@@ -144,12 +182,12 @@ const VoterCheckin: React.FC = () => {
   );
 };
 
-const DetailItem = ({ label, value, icon, large }: { label: string, value: string, icon?: React.ReactNode, large?: boolean }) => (
+const DetailItem = ({ label, value, icon, large, highlight }: { label: string, value: string, icon?: React.ReactNode, large?: boolean, highlight?: boolean }) => (
   <div className="space-y-1">
     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
       {icon} {label}
     </p>
-    <p className={`font-semibold text-slate-800 ${large ? 'text-2xl' : 'text-lg'}`}>{value}</p>
+    <p className={`font-semibold ${highlight ? 'text-red-600 bg-red-50 px-2 py-0.5 rounded-lg inline-block' : 'text-slate-800'} ${large ? 'text-2xl' : 'text-lg'}`}>{value}</p>
   </div>
 );
 
