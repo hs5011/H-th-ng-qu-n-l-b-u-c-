@@ -38,3 +38,11 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
 }
+
+export interface SheetConfig {
+  spreadsheetId: string;
+  votersSheetName: string;
+  usersSheetName: string;
+  lastSync?: string;
+  autoSync: boolean;
+}

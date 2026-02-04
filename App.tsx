@@ -17,7 +17,11 @@ import { AuthState, User, UserRole } from './types';
 const App: React.FC = () => {
   const [auth, setAuth] = useState<AuthState>(() => {
     const saved = localStorage.getItem('auth');
-    return saved ? JSON.parse(saved) : { user: null, isAuthenticated: false };
+    try {
+      return saved ? JSON.parse(saved) : { user: null, isAuthenticated: false };
+    } catch {
+      return { user: null, isAuthenticated: false };
+    }
   });
 
   const location = useLocation();
@@ -25,6 +29,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('auth', JSON.stringify(auth));
+    const projectName = localStorage.getItem('app_project_name') || 'Hệ thống Bầu cử';
+    document.title = `${projectName} | Quản trị`;
   }, [auth]);
 
   const handleLogin = (user: User) => {
@@ -34,6 +40,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setAuth({ user: null, isAuthenticated: false });
+    localStorage.removeItem('auth');
     navigate('/login');
   };
 
@@ -41,10 +48,6 @@ const App: React.FC = () => {
 
   if (!auth.isAuthenticated && location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
-  }
-
-  if (auth.isAuthenticated && location.pathname === '/login') {
-    return <Navigate to="/" replace />;
   }
 
   return (
@@ -56,30 +59,13 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/" element={<Dashboard />} />
-            
-            {/* Routes cho mọi người dùng đã đăng nhập */}
             <Route path="/voters" element={<VoterList />} />
             <Route path="/voters/checkin" element={<VoterCheckin />} />
             <Route path="/reports" element={<Reports />} />
-            
-            {/* Admin Only Routes */}
-            <Route 
-              path="/voters/import" 
-              element={isAdmin ? <VoterImport /> : <Navigate to="/" replace />} 
-            />
-            <Route 
-              path="/users" 
-              element={isAdmin ? <UserManagement /> : <Navigate to="/" replace />} 
-            />
-            <Route 
-              path="/settings" 
-              element={isAdmin ? <ElectionSettings /> : <Navigate to="/" replace />} 
-            />
-            <Route 
-              path="/areas" 
-              element={isAdmin ? <VotingAreaSettings /> : <Navigate to="/" replace />} 
-            />
-            
+            <Route path="/voters/import" element={isAdmin ? <VoterImport /> : <Navigate to="/" replace />} />
+            <Route path="/users" element={isAdmin ? <UserManagement /> : <Navigate to="/" replace />} />
+            <Route path="/settings" element={isAdmin ? <ElectionSettings /> : <Navigate to="/" replace />} />
+            <Route path="/areas" element={isAdmin ? <VotingAreaSettings /> : <Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
