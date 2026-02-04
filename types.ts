@@ -25,6 +25,7 @@ export interface Voter {
   id: string;
   fullName: string;
   idCard: string; // CCCD
+  address: string; // Địa chỉ nhà
   neighborhood: string; // Khu phố
   constituency: string; // Đơn vị bầu cử
   votingGroup: string; // Tổ bầu cử

@@ -29,13 +29,12 @@ const VoterImport: React.FC = () => {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws);
 
-        // Chuyển đổi dữ liệu từ Excel sang định dạng của hệ thống
         const formattedData: Voter[] = data.map((row: any, index: number) => {
-          // Cố gắng tìm các cột dựa trên tên tiếng Việt phổ biến hoặc vị trí
           return {
             id: `imp-${Date.now()}-${index}`,
             fullName: row['Họ tên'] || row['Họ và tên'] || row['Name'] || 'Không rõ',
             idCard: String(row['CCCD'] || row['Số CCCD'] || row['ID'] || '').trim(),
+            address: row['Địa chỉ'] || row['Địa chỉ nhà'] || row['Address'] || '-',
             neighborhood: row['Khu phố'] || row['Thôn'] || row['Phường'] || '-',
             constituency: row['Đơn vị bầu cử'] || row['Đơn vị'] || '-',
             votingGroup: row['Tổ bầu cử'] || row['Tổ'] || '-',
@@ -44,7 +43,6 @@ const VoterImport: React.FC = () => {
           };
         });
 
-        // Kiểm tra dữ liệu hợp lệ
         if (formattedData.length === 0) {
           alert('Tệp Excel không có dữ liệu hoặc sai định dạng.');
           setIsLoading(false);
@@ -76,7 +74,7 @@ const VoterImport: React.FC = () => {
     const updatedVoters = [...existingVoters, ...importedData];
     
     localStorage.setItem('voters', JSON.stringify(updatedVoters));
-    localStorage.setItem('app_initialized', 'true'); // Đánh dấu đã có dữ liệu thật
+    localStorage.setItem('app_initialized', 'true'); 
     
     setTimeout(() => {
       setIsLoading(false);
@@ -120,6 +118,7 @@ const VoterImport: React.FC = () => {
               <ul className="list-disc ml-4 space-y-1 opacity-80">
                 <li>Họ tên / Họ và tên</li>
                 <li>CCCD / Số CCCD</li>
+                <li>Địa chỉ / Địa chỉ nhà</li>
                 <li>Khu phố / Thôn</li>
                 <li>Tổ / Tổ bầu cử</li>
                 <li>Đơn vị / Đơn vị bầu cử</li>
@@ -160,8 +159,8 @@ const VoterImport: React.FC = () => {
                   <tr className="border-b border-slate-100">
                     <th className="px-4 py-3 font-bold text-slate-500">Họ tên</th>
                     <th className="px-4 py-3 font-bold text-slate-500">CCCD</th>
-                    <th className="px-4 py-3 font-bold text-slate-500">Địa chỉ</th>
-                    <th className="px-4 py-3 font-bold text-slate-500">Tổ</th>
+                    <th className="px-4 py-3 font-bold text-slate-500">Địa chỉ nhà</th>
+                    <th className="px-4 py-3 font-bold text-slate-500">Khu phố</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -169,8 +168,8 @@ const VoterImport: React.FC = () => {
                     <tr key={i} className="hover:bg-slate-50">
                       <td className="px-4 py-3 font-bold text-slate-800">{v.fullName}</td>
                       <td className="px-4 py-3 text-slate-600">{v.idCard}</td>
+                      <td className="px-4 py-3 text-slate-500 truncate max-w-[150px]">{v.address}</td>
                       <td className="px-4 py-3 text-slate-500">{v.neighborhood}</td>
-                      <td className="px-4 py-3 text-slate-500">{v.votingGroup}</td>
                     </tr>
                   ))}
                 </tbody>

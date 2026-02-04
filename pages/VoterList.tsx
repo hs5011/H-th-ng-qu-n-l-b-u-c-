@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Voter, User, UserRole } from '../types';
-import { Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, ChevronLeft, ChevronRight, UserCheck } from 'lucide-react';
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -37,6 +37,19 @@ const VoterList: React.FC = () => {
     }
   };
 
+  const handleMarkAsVoted = (id: string) => {
+    const voter = voters.find(v => v.id === id);
+    if (!voter) return;
+
+    if (confirm(`Xác nhận cử tri "${voter.fullName}" đã hoàn tất bỏ phiếu?`)) {
+      const updated = voters.map(v => 
+        v.id === id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
+      );
+      setVoters(updated);
+      localStorage.setItem('voters', JSON.stringify(updated));
+    }
+  };
+
   const handleClearAll = () => {
     if (confirm('CẢNH BÁO: Hành động này sẽ xóa VĨNH VIỄN toàn bộ danh sách cử tri hiện có. Bạn có chắc chắn?')) {
       setVoters([]);
@@ -64,6 +77,7 @@ const VoterList: React.FC = () => {
       return (
         v.fullName.toLowerCase().includes(term) || 
         v.idCard.toLowerCase().includes(term) || 
+        (v.address && v.address.toLowerCase().includes(term)) ||
         v.neighborhood.toLowerCase().includes(term) || 
         v.votingArea.toLowerCase().includes(term) ||
         v.votingGroup.toLowerCase().includes(term)
@@ -111,7 +125,7 @@ const VoterList: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Tìm theo tên, CCCD, khu phố, khu vực..." 
+              placeholder="Tìm theo tên, CCCD, địa chỉ, khu phố..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-red-50 font-medium"
@@ -138,6 +152,7 @@ const VoterList: React.FC = () => {
                 <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-100">
                   <tr>
                     <th className="px-6 py-4">Họ tên & CCCD</th>
+                    <th className="px-6 py-4">Địa chỉ nhà</th>
                     <th className="px-6 py-4">Khu phố & Địa điểm</th>
                     <th className="px-6 py-4">Tổ / Đơn vị</th>
                     <th className="px-6 py-4 text-center">Trạng thái</th>
@@ -152,6 +167,11 @@ const VoterList: React.FC = () => {
                           <p className="font-bold text-slate-800">{v.fullName}</p>
                           <p className="text-xs font-mono text-slate-400 font-medium">{v.idCard}</p>
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm text-slate-600 font-medium max-w-[200px] truncate" title={v.address}>
+                          {v.address || '-'}
+                        </p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
@@ -177,9 +197,24 @@ const VoterList: React.FC = () => {
                       </td>
                       {isAdmin && (
                         <td className="px-6 py-4 text-right">
-                          <button onClick={() => handleDeleteVoter(v.id)} className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-                            <Trash2 size={18} />
-                          </button>
+                          <div className="flex justify-end items-center gap-1">
+                            {!v.hasVoted && (
+                              <button 
+                                onClick={() => handleMarkAsVoted(v.id)}
+                                title="Xác nhận cử tri đã đi bầu"
+                                className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all"
+                              >
+                                <UserCheck size={18} />
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteVoter(v.id)} 
+                              title="Xóa cử tri"
+                              className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -187,7 +222,6 @@ const VoterList: React.FC = () => {
                 </tbody>
               </table>
               
-              {/* Pagination UI */}
               <div className="p-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                   Trang {currentPage} / {totalPages || 1}

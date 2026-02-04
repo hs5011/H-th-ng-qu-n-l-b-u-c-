@@ -28,10 +28,11 @@ const Dashboard: React.FC = () => {
         id: `v-${i}`,
         fullName: `Cử tri Mẫu ${i + 1}`,
         idCard: `${100000000000 + i}`,
+        address: `${i + 1} Đường số ${Math.ceil((i+1)/10)}, Xã Nhà Bè`,
         neighborhood: `Khu phố ${Math.ceil((i + 1) / 20)}`,
         constituency: `Đơn vị ${Math.ceil((i + 1) / 50)}`,
         votingGroup: `Tổ ${Math.ceil((i + 1) / 10)}`,
-        votingArea: `Khu vực ${Math.ceil((i % 4) + 1)}`, // 4 khu vực mẫu
+        votingArea: `Khu vực ${Math.ceil((i % 4) + 1)}`, 
         hasVoted: Math.random() > 0.4,
         votedAt: new Date().toISOString()
       }));
@@ -66,7 +67,6 @@ const Dashboard: React.FC = () => {
 
   const isAdmin = currentUser?.role === UserRole.ADMIN;
   
-  // 1. Lọc tập hợp dữ liệu gốc theo vai trò
   const roleFilteredVoters = voters.filter(v => {
     if (!isAdmin && currentUser?.votingArea) {
       return v.votingArea === currentUser.votingArea;
@@ -78,7 +78,6 @@ const Dashboard: React.FC = () => {
   const votedCount = roleFilteredVoters.filter(v => v.hasVoted).length;
   const progress = totalVoters > 0 ? Math.round((votedCount / totalVoters) * 100) : 0;
 
-  // 2. Dữ liệu cho biểu đồ Khu phố (Staff thấy khu phố của mình, Admin thấy tất cả)
   const neighborhoodData = Object.values(
     roleFilteredVoters.reduce((acc, v) => {
       if (!acc[v.neighborhood]) acc[v.neighborhood] = { name: v.neighborhood, total: 0, voted: 0 };
@@ -91,7 +90,6 @@ const Dashboard: React.FC = () => {
     percentage: val.total > 0 ? Math.round((val.voted / val.total) * 100) : 0
   }));
 
-  // 3. Dữ liệu so sánh giữa các Khu vực (Chỉ dành cho Admin)
   const areaComparisonData = isAdmin ? Object.values(
     voters.reduce((acc, v) => {
       if (!acc[v.votingArea]) acc[v.votingArea] = { name: v.votingArea, total: 0, voted: 0, notVoted: 0 };
