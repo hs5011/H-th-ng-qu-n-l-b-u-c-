@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -10,7 +10,8 @@ import {
   Vote,
   List,
   Settings,
-  Map
+  Map,
+  FileText
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user, onLogout }) => {
     { path: '/', label: 'Tổng quan', icon: LayoutDashboard },
     { path: '/voters/checkin', label: 'Xác nhận cử tri', icon: CheckSquare },
     { path: '/voters', label: 'Danh sách cử tri', icon: List },
+    { path: '/reports', label: 'Báo cáo thống kê', icon: FileText },
     ...(user?.role === UserRole.ADMIN ? [
       { path: '/voters/import', label: 'Nhập cử tri', icon: FileSpreadsheet },
       { path: '/areas', label: 'Quản lý khu vực', icon: Map },

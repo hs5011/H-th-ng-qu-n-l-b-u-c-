@@ -9,6 +9,7 @@ import VoterCheckin from './pages/VoterCheckin';
 import VoterList from './pages/VoterList';
 import ElectionSettings from './pages/ElectionSettings';
 import VotingAreaSettings from './pages/VotingAreaSettings';
+import Reports from './pages/Reports';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import { AuthState, User, UserRole } from './types';
@@ -59,6 +60,7 @@ const App: React.FC = () => {
             {/* Routes cho mọi người dùng đã đăng nhập */}
             <Route path="/voters" element={<VoterList />} />
             <Route path="/voters/checkin" element={<VoterCheckin />} />
+            <Route path="/reports" element={<Reports />} />
             
             {/* Admin Only Routes */}
             <Route 
