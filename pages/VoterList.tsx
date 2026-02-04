@@ -1,7 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Voter, User, UserRole } from '../types';
-import { Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, ChevronLeft, ChevronRight, UserCheck } from 'lucide-react';
+import { 
+  Search, Trash2, CheckCircle, XCircle, UserMinus, Database, MapPin, 
+  ChevronLeft, ChevronRight, UserCheck, X, Hash, ShieldCheck, User as UserIcon
+} from 'lucide-react';
 
 const VoterList: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
@@ -9,6 +12,10 @@ const VoterList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'voted' | 'not_voted'>('all');
   
+  // Modal state
+  const [voterToConfirm, setVoterToConfirm] = useState<Voter | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -37,17 +44,25 @@ const VoterList: React.FC = () => {
     }
   };
 
-  const handleMarkAsVoted = (id: string) => {
-    const voter = voters.find(v => v.id === id);
-    if (!voter) return;
+  const handleOpenConfirmModal = (v: Voter) => {
+    setVoterToConfirm(v);
+  };
 
-    if (confirm(`Xác nhận cử tri "${voter.fullName}" đã hoàn tất bỏ phiếu?`)) {
+  const handleFinalConfirm = () => {
+    if (!voterToConfirm) return;
+    
+    setIsConfirming(true);
+    
+    // Giả lập lưu dữ liệu
+    setTimeout(() => {
       const updated = voters.map(v => 
-        v.id === id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
+        v.id === voterToConfirm.id ? { ...v, hasVoted: true, votedAt: new Date().toISOString() } : v
       );
       setVoters(updated);
       localStorage.setItem('voters', JSON.stringify(updated));
-    }
+      setIsConfirming(false);
+      setVoterToConfirm(null);
+    }, 600);
   };
 
   const handleClearAll = () => {
@@ -200,7 +215,7 @@ const VoterList: React.FC = () => {
                           <div className="flex justify-end items-center gap-1">
                             {!v.hasVoted && (
                               <button 
-                                onClick={() => handleMarkAsVoted(v.id)}
+                                onClick={() => handleOpenConfirmModal(v)}
                                 title="Xác nhận cử tri đã đi bầu"
                                 className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all"
                               >
@@ -268,6 +283,86 @@ const VoterList: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Admin Confirmation Modal */}
+      {voterToConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b bg-slate-50/50 flex justify-between items-center">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <ShieldCheck size={20} />
+                <h3 className="font-black uppercase tracking-tight">Xác nhận thông tin cử tri</h3>
+              </div>
+              <button onClick={() => setVoterToConfirm(null)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="flex gap-4">
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+                  <UserIcon size={32} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-slate-800">{voterToConfirm.fullName}</p>
+                  <p className="text-sm font-mono text-slate-400 flex items-center gap-1">
+                    <Hash size={14} /> CCCD: {voterToConfirm.idCard}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Địa chỉ nhà</p>
+                  <p className="font-bold text-slate-700">{voterToConfirm.address || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Khu phố</p>
+                  <p className="font-bold text-slate-700">{voterToConfirm.neighborhood}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị / Tổ</p>
+                  <p className="font-bold text-slate-700">Đơn vị {voterToConfirm.constituency} / Tổ {voterToConfirm.votingGroup}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Điểm bầu cử</p>
+                  <p className="font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded inline-block">{voterToConfirm.votingArea}</p>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100 flex gap-3 text-emerald-800">
+                <CheckCircle size={20} className="shrink-0" />
+                <p className="text-xs font-medium">
+                  Bằng cách nhấn xác nhận, bạn xác thực rằng cử tri này đã có mặt và thực hiện quyền bỏ phiếu theo đúng quy định.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 pt-0 flex gap-3">
+              <button 
+                onClick={() => setVoterToConfirm(null)}
+                className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all"
+              >
+                Đóng
+              </button>
+              <button 
+                onClick={handleFinalConfirm}
+                disabled={isConfirming}
+                className="flex-[2] py-3 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-lg shadow-red-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {isConfirming ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <UserCheck size={18} />
+                    XÁC NHẬN BẦU CỬ
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
